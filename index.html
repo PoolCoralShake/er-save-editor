@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elden Ring Save Editor — er-save-editor for Windows</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#070b18;
+    --panel:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.09);
+    --text:#e8ecf8;
+    --muted:#9aa6c4;
+    --gold:#e9c46a;
+    --violet:#8b7bff;
+    --cyan:#4fd1e0;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1100px 700px at 12% -8%, rgba(79,209,224,.14), transparent 60%),
+      radial-gradient(1000px 760px at 88% 4%, rgba(139,123,255,.18), transparent 62%),
+      radial-gradient(900px 900px at 50% 110%, rgba(233,196,106,.10), transparent 60%),
+      linear-gradient(165deg,#070b18 0%,#0b1024 38%,#11152b 66%,#080b16 100%);
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  a{text-decoration:none;color:inherit}
+  .wrap{width:min(1140px,92vw);margin:0 auto}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(10,14,30,.55);
+    backdrop-filter:blur(18px) saturate(160%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:24px;padding:14px 0;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:1.05rem}
+  .brand .rune{
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--gold),#b98a2e);
+    color:#1a1206;font-size:.95rem;font-weight:900;
+    box-shadow:0 0 22px rgba(233,196,106,.35);
+  }
+  .brand code{
+    font-family:ui-monospace,Consolas,monospace;
+    color:var(--muted);font-weight:600;font-size:.78rem;
+    border:1px solid var(--line);border-radius:6px;padding:1px 6px;
+    background:rgba(255,255,255,.03);
+  }
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{
+    font-size:.9rem;color:var(--muted);font-weight:600;
+    transition:color .2s ease;position:relative;
+  }
+  .nav-links a:hover{color:#fff}
+  .nav-links a::after{
+    content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;
+    background:linear-gradient(90deg,var(--cyan),var(--violet));
+    transition:width .25s ease;border-radius:2px;
+  }
+  .nav-links a:hover::after{width:100%}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    font-weight:700;font-size:.92rem;border-radius:11px;
+    padding:12px 22px;cursor:pointer;border:1px solid transparent;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#e9c46a,#c99a3c);
+    color:#1b1407;
+    box-shadow:0 10px 30px -8px rgba(233,196,106,.55), inset 0 1px 0 rgba(255,255,255,.4);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 38px -8px rgba(233,196,106,.7)}
+  .btn-ghost{
+    background:rgba(255,255,255,.045);
+    border-color:rgba(255,255,255,.16);
+    color:var(--text);
+    backdrop-filter:blur(8px);
+  }
+  .btn-ghost:hover{background:rgba(255,255,255,.09);transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
+  .nav-cta{padding:10px 18px;font-size:.86rem}
+
+  /* ---------- HERO ---------- */
+  header.hero{padding:84px 0 70px;position:relative;text-align:center}
+  .pill{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:7px 16px;border-radius:999px;
+    border:1px solid rgba(139,123,255,.4);
+    background:linear-gradient(90deg,rgba(139,123,255,.16),rgba(79,209,224,.12));
+    font-size:.79rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+    color:#cdd6f5;
+    box-shadow:0 0 30px -6px rgba(139,123,255,.45);
+  }
+  .pill .dot{
+    width:7px;height:7px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+
+  h1{
+    margin:26px auto 0;max-width:900px;
+    font-size:clamp(2.15rem,5.4vw,4rem);
+    line-height:1.08;font-weight:900;letter-spacing:-1.4px;
+    background:linear-gradient(100deg,#ffffff 4%,#e9c46a 34%,#8b7bff 66%,#4fd1e0 96%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    filter:drop-shadow(0 8px 40px rgba(139,123,255,.22));
+  }
+  .hero p.lead{
+    margin:22px auto 0;max-width:640px;color:var(--muted);
+    font-size:clamp(1rem,1.5vw,1.12rem);
+  }
+  .hero-actions{
+    display:flex;flex-wrap:wrap;gap:14px;justify-content:center;
+    margin-top:34px;
+  }
+  .hero-actions .btn{padding:15px 30px;font-size:1rem}
+
+  .stats{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+    margin-top:52px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 12px;
+    backdrop-filter:blur(10px);
+    transition:border-color .2s ease,transform .2s ease;
+  }
+  .stat:hover{border-color:rgba(233,196,106,.4);transform:translateY(-3px)}
+  .stat b{display:block;font-size:1.16rem;font-weight:800;letter-spacing:-.3px}
+  .stat span{display:block;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;font-weight:700}
+
+  /* ---------- SECTION HEADINGS ---------- */
+  section{padding:78px 0}
+  .sec-head{text-align:center;max-width:660px;margin:0 auto 48px}
+  .sec-head .kicker{
+    font-size:.76rem;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;
+    color:var(--gold);margin-bottom:12px;
+  }
+  .sec-head h2{
+    font-size:clamp(1.7rem,3.4vw,2.5rem);font-weight:900;letter-spacing:-.9px;line-height:1.15;
+  }
+  .sec-head p{color:var(--muted);margin-top:12px;font-size:.98rem}
+
+  /* ---------- FEATURES ---------- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{
+    position:relative;overflow:hidden;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.022));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:28px 24px 26px;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  }
+  .card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--gold),var(--violet),var(--cyan));
+    opacity:.85;
+  }
+  .card:hover{
+    transform:translateY(-7px);
+    border-color:rgba(139,123,255,.42);
+    box-shadow:0 26px 50px -22px rgba(0,0,0,.85), 0 0 0 1px rgba(139,123,255,.14);
+  }
+  .card .ico{
+    font-size:1.6rem;line-height:1;
+    width:52px;height:52px;border-radius:13px;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.05);
+    border:1px solid var(--line);
+    margin-bottom:18px;
+  }
+  .card h3{font-size:1.06rem;font-weight:800;letter-spacing:-.2px;margin-bottom:9px}
+  .card p{font-size:.9rem;color:var(--muted)}
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps{position:relative;max-width:720px;margin:0 auto;padding-left:6px}
+  .steps::before{
+    content:"";position:absolute;left:27px;top:14px;bottom:14px;width:3px;border-radius:3px;
+    background:linear-gradient(180deg,var(--gold),var(--violet) 55%,var(--cyan));
+    opacity:.75;
+  }
+  .step{position:relative;display:flex;gap:24px;padding:0 0 40px 0}
+  .step:last-child{padding-bottom:0}
+  .step .num{
+    flex:0 0 56px;width:56px;height:56px;border-radius:50%;
+    display:grid;place-items:center;
+    font-weight:900;font-size:1.1rem;color:#0d1020;
+    background:linear-gradient(135deg,#e9c46a,#c99a3c);
+    box-shadow:0 0 0 6px rgba(7,11,24,.9), 0 0 26px rgba(233,196,106,.35);
+    position:relative;z-index:1;
+  }
+  .step:nth-child(2) .num{background:linear-gradient(135deg,#a294ff,#6f5cf0);color:#fff;box-shadow:0 0 0 6px rgba(7,11,24,.9),0 0 26px rgba(139,123,255,.4)}
+  .step:nth-child(3) .num{background:linear-gradient(135deg,#7ce3ee,#37b9c9);color:#062028;box-shadow:0 0 0 6px rgba(7,11,24,.9),0 0 26px rgba(79,209,224,.4)}
+  .step .body{padding-top:6px}
+  .step h3{font-size:1.08rem;font-weight:800;margin-bottom:6px;letter-spacing:-.2px}
+  .step p{font-size:.92rem;color:var(--muted);max-width:520px}
+
+  /* ---------- FAQ ---------- */
+  .faq{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  details{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:13px;
+    overflow:hidden;
+    transition:border-color .2s ease,background .2s ease;
+  }
+  details[open]{border-color:rgba(139,123,255,.4);background:rgba(139,123,255,.07)}
+  summary{
+    list-style:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:18px 20px;
+    font-weight:700;font-size:.98rem;
+    user-select:none;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary .plus{
+    flex:0 0 26px;width:26px;height:26px;border-radius:50%;
+    display:grid;place-items:center;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.05);
+    font-size:1rem;font-weight:700;line-height:1;
+    color:var(--gold);
+    transition:transform .28s ease, background .28s ease;
+  }
+  details[open] summary .plus{
+    transform:rotate(45deg);
+    background:linear-gradient(135deg,var(--gold),#c99a3c);
+    color:#1b1407;border-color:transparent;
+  }
+  details .answer{
+    padding:0 20px 20px;color:var(--muted);font-size:.92rem;
+    border-top:1px solid rgba(255,255,255,.06);
+    padding-top:14px;margin:0 0;
+  }
+
+  /* ---------- CTA BANNER ---------- */
+  .cta-wrap{padding:20px 0 90px}
+  .cta{
+    position:relative;overflow:hidden;text-align:center;
+    border-radius:24px;
+    border:1px solid rgba(233,196,106,.3);
+    padding:64px 28px;
+    background:linear-gradient(160deg,rgba(139,123,255,.16),rgba(7,11,24,.7) 55%,rgba(233,196,106,.12));
+    box-shadow:0 40px 90px -40px rgba(139,123,255,.5);
+  }
+  .cta::before{
+    content:"";position:absolute;left:50%;top:-40%;transform:translateX(-50%);
+    width:760px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,rgba(233,196,106,.32),rgba(139,123,255,.18) 45%,transparent 70%);
+    filter:blur(20px);pointer-events:none;
+  }
+  .cta h2{
+    position:relative;font-size:clamp(1.65rem,3.6vw,2.6rem);
+    font-weight:900;letter-spacing:-1px;line-height:1.15;max-width:720px;margin:0 auto;
+  }
+  .cta p{position:relative;color:var(--muted);margin:16px auto 0;max-width:560px;font-size:.98rem}
+  .cta .hero-actions{margin-top:32px;position:relative}
+  .cta .btn{padding:15px 32px;font-size:1rem}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:32px 0 42px;
+    background:rgba(5,8,18,.55);
+  }
+  .foot-inner{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    font-size:.85rem;color:var(--muted);
+  }
+  .foot-inner a{color:#cdd6f5;font-weight:600;transition:color .2s}
+  .foot-inner a:hover{color:var(--gold)}
+  .foot-links{display:flex;gap:22px;align-items:center}
+  .foot-note{font-size:.76rem;color:#6d7896;margin-top:10px;width:100%}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:900px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .nav-links{gap:20px}
+  }
+  @media (max-width:640px){
+    .nav-links{display:none}
+    .nav-cta{padding:9px 15px;font-size:.8rem}
+    header.hero{padding:56px 0 44px}
+    .grid{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr;gap:10px}
+    .stat b{font-size:1rem}
+    section{padding:56px 0}
+    .cta{padding:46px 20px;border-radius:18px}
+    .foot-inner{flex-direction:column;align-items:flex-start;gap:12px}
+    .steps::before{left:23px}
+    .step{gap:18px}
+    .step .num{flex:0 0 48px;width:48px;height:48px;font-size:.95rem}
+    .hero-actions .btn{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <span class="rune">◈</span>
+      <span>er-save-editor</span>
+      <code>v3.4.1</code>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn btn-primary nav-cta" href="https://gitscore.cc">Download</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="pill"><span class="dot"></span>Elden Ring Save Editor</span>
+    <h1>Shape the Lands Between — edit every rune, stat and blade.</h1>
+    <p class="lead">
+      er-save-editor is a free Windows save editor for ELDEN RING. Unlock unlimited respecs,
+      max out stats and runes, and add any item, weapon or armor set to your inventory —
+      all from a clean, offline, open-source tool.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://gitscore.cc">⬇ Download for Windows</a>
+      <a class="btn btn-ghost" href="https://gitscore.cc">★ View on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>142,000+</b><span>Downloads</span></div>
+      <div class="stat"><b>v3.4.1</b><span>Latest version</span></div>
+      <div class="stat"><b>Windows 10 / 11</b><span>Platform</span></div>
+      <div class="stat"><b>Free &amp; open source</b><span>License</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Features</div>
+      <h2>Everything a Tarnished needs, in one editor</h2>
+      <p>Built for fast, safe save editing — no cheat engine, no online session, no guesswork.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ico">📊</div>
+        <h3>Stat &amp; Attribute Editing</h3>
+        <p>Fine-tune Vigor, Mind, Endurance, Strength, Dexterity, Intelligence, Faith and Arcane to any value, then level up instantly without grinding runes.</p>
+      </div>
+      <div class="card">
+        <div class="ico">💰</div>
+        <h3>Runes &amp; Instant Leveling</h3>
+        <p>Set your rune count directly in the save file and jump straight to the level you want. No farming, no exploits — just the build you planned.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🗡️</div>
+        <h3>Items, Weapons &amp; Armor</h3>
+        <p>Unlock a full inventory: add any weapon, armor piece, talisman, spirit ash or consumable, and remove the ones you don't want.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🔄</div>
+        <h3>Unlimited Respecs</h3>
+        <p>Respec as many times as you like without burning Larval Tears. Experiment with new builds freely and revert whenever you change your mind.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🛡️</div>
+        <h3>Save-Safe Backups</h3>
+        <p>The editor creates an automatic backup of your character file before writing. Restore the original save in one click if anything looks wrong.</p>
+      </div>
+      <div class="card">
+        <div class="ico">⚙️</div>
+        <h3>Offline &amp; Open Source</h3>
+        <p>Runs fully offline on Windows 10 and 11 with no account required. The source is public — audit it, build it, or contribute on GitHub.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">How it works</div>
+      <h2>From download to edited save in three steps</h2>
+      <p>No installers, no dependencies — the editor is a single portable executable.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <h3>Download and launch</h3>
+          <p>Grab the latest release from gitscore.cc, extract the archive, and run <strong>er-save-editor.exe</strong>. Windows 10 and 11 are supported out of the box.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <h3>Open your character save</h3>
+          <p>Close ELDEN RING, then point the editor at your save file. It reads your characters and automatically creates a backup before any change is written.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <h3>Edit and save</h3>
+          <p>Adjust stats, runes, items, weapons and armor, hit Save, and relaunch the game. Your updated Tarnished loads exactly as configured.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">FAQ</div>
+      <h2>Questions from fellow Tarnished</h2>
+      <p>Short answers about safety, compatibility and getting started.</p>
+    </div>
+
+    <div class="faq">
+      <details>
+        <summary>Is er-save-editor free to use?<span class="plus">+</span></summary>
+        <div class="answer">Yes. er-save-editor is completely free and open source. There is no premium tier, no account and no telemetry — download it from gitscore.cc and use it as much as you like.</div>
+      </details>
+      <details>
+        <summary>Will editing my save get me banned online?<span class="plus">+</span></summary>
+        <div class="answer">Edited saves should be treated as offline-only. Use them in single-player or on a separate profile, and do not bring modified characters into online play. Always keep the automatic backup the editor creates so you can restore your original save.</div>
+      </details>
+      <details>
+        <summary>Which game versions are supported?<span class="plus">+</span></summary>
+        <div class="answer">The editor supports the current ELDEN RING PC save format on Windows 10 and 11, including the Shadow of the Er
